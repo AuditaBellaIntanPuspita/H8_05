@@ -1,0 +1,172 @@
+#Assignment 2
+Link Repository : https://github.com/AuditaBellaIntanPuspita/H8_05/blob/main/PYTN_Assgn_2_5_Audita%20Bella%20Intan%20Puspita/PYTN_Assgn_2_5_Audita%20Bella%20Intan%20Puspita.ipynb
+Link : https://github.com/AuditaBellaIntanPuspita/H8_05
+
+- Nama : Audita Bella Intan Puspita
+- Kelas : PYTN-KS18-05
+## Assignment 2
+### Project Overview
+Using what you’ve learned; download the NYC Property Sales Dataset from Kaggle. This dataset is a record of every building or building unit (apartment, etc.) sold in the New York City property market over a 12-month period.
+
+This dataset contains the location, address, type, sale price, and sale date of building units sold. A reference on the trickier fields:
+
+- BOROUGH: A digit code for the borough the property is located in; in order these are Manhattan (1), Bronx (2), Brooklyn (3), Queens (4), and Staten Island (5).
+- BLOCK; LOT: The combination of borough, block, and lot forms a unique key for property in New York City. Commonly called a BBL.
+- BUILDING CLASS AT PRESENT and BUILDING CLASS AT TIME OF SALE: The type of building at various points in time.
+
+Note that because this is a financial transaction dataset, there are some points that need to be kept in mind:
+
+- Many sales occur with a nonsensically small dollar amount: $0 most commonly. These sales are actually transfers of deeds between parties: for example, parents transferring ownership to their home to a child after moving out for retirement.
+- This dataset uses the financial definition of a building/building unit, for tax purposes. In case a single entity owns the building in question, a sale covers the value of the entire building. In case a building is owned piecemeal by its residents (a condominium), a sale refers to a single apartment (or group of apartments) owned by some individual.
+
+Formulate a question and derive a statistical hypothesis test to answer the question. You have to demonstrate that you’re able to make decisions using data in a scientific manner. Examples of questions can be:
+
+- Is there a difference in unit sold between property built in 1900-2000 and 2001 so on?
+- Is there a difference in unit sold based on building category?
+- What can you discover about New York City real estate by looking at a year's worth of raw transaction records? Can you spot trends in the market?
+#### Import Function
+import numpy as np
+import pandas as pd
+import seaborn as sns
+import matplotlib.pyplot as plt
+#### Read Dataset
+df = pd.read_csv('nyc-rolling-sales.csv')
+df.head()
+drop kolom Unnamed:0 karena tidak mandatory
+df.drop('Unnamed: 0', axis=1, inplace=True)
+df.head()
+#### Deskripsi Setiap Atribut
+print("----Informasi Baris dan Kolom----")
+print("Baris : ", df.shape[0])
+print("Kolom : ", df.shape[1])
+df.info()
+#### Melakukan replacing null data
+df.replace('0', np.nan, inplace=True)
+df.replace(' ', np.nan, inplace=True)
+df.replace(' -  ', np.nan, inplace=True)
+df.info()
+EASE-MENT memiliki 0 non-null. maka kita akan drop kolom tersebut
+df.drop('EASE-MENT', axis=1, inplace=True)
+df.head()
+#### Jumlah Duplikasi Data
+df.duplicated().sum()
+df = df.drop_duplicates(inplace= False)
+print("Jumlah duplikasi data : " + str(df.duplicated().sum()))
+#### Jumlah Missing Values
+# Cek missing value
+def cek_null(df):
+    col_na = df.isnull().sum().sort_values(ascending=False)
+    percent = col_na / len(df)
+    
+    missing_data = pd.concat([col_na, percent], axis=1, keys=['Total', 'Percent'])
+    print(missing_data[missing_data['Total'] > 0])
+cek_null(df)
+df.drop('APARTMENT NUMBER', axis=1, inplace=True)
+df.head()
+#### MENGGUNAKAN KOLOM SALE PRICE UNTUK CENTRAL TENDENCY
+data_sales = df.copy()
+data_sales["SALE PRICE"] = data_sales["SALE PRICE"].astype(float)
+menghitung mean dari sale price Namun sebelumnya, perlu dilakukan penanganan outlier
+Q1 = data_sales['SALE PRICE'].quantile(0.25)
+Q3 = data_sales['SALE PRICE'].quantile(0.75)
+IQR = Q3 - Q1
+
+LOWER_LIMIT = Q1 - (1.5 * IQR)
+UPPER_LIMIT = Q3 + (1.5 * IQR)
+
+outliers_upper = data_sales['SALE PRICE'][(data_sales['SALE PRICE'] > UPPER_LIMIT)]
+outliers_lower = data_sales['SALE PRICE'][(data_sales['SALE PRICE'] < LOWER_LIMIT)]
+jumlah_outlier =  outliers_lower.size + outliers_upper.size
+print("Total outlier: ", jumlah_outlier)
+LOWER_LIMIT
+persentase_outlier = (jumlah_outlier / data_sales['SALE PRICE'].size) * 100
+persentase_outlier
+sns.kdeplot(data_sales['SALE PRICE'], fill=True)
+print('Jumlah baris data sebelum data outlier di-drop: ',data_sales.shape[0])
+data_sales = data_sales.loc[data_sales['SALE PRICE'] < UPPER_LIMIT]
+data_sales = data_sales.loc[data_sales['SALE PRICE'] > LOWER_LIMIT]
+
+print('Jumlah baris data setelah data outlier di-drop: ',data_sales.shape[0])
+sns.kdeplot(data_sales['SALE PRICE'], fill=True)
+#### MEAN
+mean_sales_price = data_sales['SALE PRICE'].mean()
+print("Mean Sales Price: ", mean_sales_price)
+#### MEDIAN
+median_sales_price = data_sales['SALE PRICE'].median()
+print("Median Sales Price: ", median_sales_price)
+#### MODUS
+data_neighborhood = df.copy()
+modus_neighborhood = data_neighborhood['NEIGHBORHOOD'].mode()
+print("Modus neighborhood: ", modus_neighborhood)
+#### RANGE
+range_sale_price = np.max(data_sales['SALE PRICE']) - np.min(data_sales['SALE PRICE'])
+range_sale_price
+#### VARIANCE
+variance_sale_price = np.var(data_sales['SALE PRICE'])
+variance_sale_price
+#### STANDAR DEVIASI
+standar_deviasi_sale_price = np.std(data_sales['SALE PRICE'])
+standar_deviasi_sale_price
+#### CONFIDENCE INTERVAL
+data_ci = df.copy()
+data_ci['TAX CLASS AT PRESENT'].unique()
+dx = data_ci[['BOROUGH', 'TAX CLASS AT PRESENT']].dropna()
+pd.crosstab(dx.BOROUGH, dx['TAX CLASS AT PRESENT'])
+#p_11 = tax 1 & borough 1
+n = 333+4034+11654+15627+6681
+p_11 = 226/n
+p_11
+n
+se_11 = np.sqrt(p_11 * (1-p_11)/ n)
+se_11
+import statsmodels.api as sm
+sm.stats.proportion_confint(n*p_11, n)
+kesimpulan = jadi, CI dari data tax class at present 1 di borough 1 adalah (0.005129856652801001, 0.006662780775777881)
+#### HYPOTESIS TESTING
+melakukan testing apakah rata2 sales price di borough 1 memiliki perbedaan signifikan terhadap rata2 sales price di borough 2
+ht = df.copy()
+ht.head(2)
+ht["SALE PRICE"] = ht["SALE PRICE"].astype(float)
+ht['SALE PRICE'].info()
+borough1 = ht[ht['BOROUGH'] == 1]
+borough2 = ht[ht['BOROUGH'] == 2]
+n1 = len(borough1)
+mu1 = borough1["SALE PRICE"].mean()
+sd1 = borough1["SALE PRICE"].std()
+
+(n1, mu1, sd1)
+n2 = len(borough2)
+mu2 = borough2["SALE PRICE"].mean()
+sd2 = borough2["SALE PRICE"].std()
+
+(n2, mu2, sd2)
+sm.stats.ztest(borough1['SALE PRICE'].dropna(), borough2['SALE PRICE'].dropna(), alternative='two-sided')
+Hasil analisis hipotesis menunjukkan bahwa ada perbedaan yang sangat signifikan dalam rata-rata harga jual properti di "borough1" dan "borough2". Nilai p-value yang sangat rendah (4.7266532660035915e-14) jelas-jelas lebih kecil dari tingkat signifikansi umum (0.05). Ini berarti kita dapat mengesampingkan hipotesis nol yang mengatakan bahwa tidak ada perbedaan dalam rata-rata harga jual antara kedua kawasan, dan kita dapat menerima hipotesis alternatif yang menyatakan bahwa ada perbedaan yang signifikan dalam rata-rata harga jual properti di kedua kawasan tersebut.
+#### PROBABILITY DISTRIBUTION
+mencari distribusi normal dari attribut sale price
+prob = df.copy()
+prob.head(2)
+prob["SALE PRICE"] = prob["SALE PRICE"].astype(float)
+Q1 = prob['SALE PRICE'].quantile(0.25)
+Q3 = prob['SALE PRICE'].quantile(0.75)
+IQR = Q3 - Q1
+
+LOWER_LIMIT = Q1 - (1.5 * IQR)
+UPPER_LIMIT = Q3 + (1.5 * IQR)
+
+outliers_upper = prob['SALE PRICE'][(prob['SALE PRICE'] > UPPER_LIMIT)]
+outliers_lower = prob['SALE PRICE'][(prob['SALE PRICE'] < LOWER_LIMIT)]
+jumlah_outlier =  outliers_lower.size + outliers_upper.size
+prob = prob.loc[prob['SALE PRICE'] < UPPER_LIMIT]
+prob = prob.loc[prob['SALE PRICE'] > LOWER_LIMIT]
+sns.kdeplot(prob['SALE PRICE'], fill=True)
+from scipy.stats import norm
+
+ax = sns.histplot(prob['SALE PRICE'],
+                 bins=100,
+                 color='skyblue',
+                 alpha=1,
+                 linewidth=15)
+
+ax.set(xlabel='Normal Distribution', ylabel = 'Frequency')
+print ("Hasil Probability Distribution dari data Sale Price")
