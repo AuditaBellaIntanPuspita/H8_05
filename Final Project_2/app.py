@@ -1,49 +1,27 @@
-from flask import Flask, render_template, request
 import numpy as np
-from sklearn.preprocessing import StandardScaler
+import pandas as pd
+from flask import Flask, render_template, request
 import pickle
 
-# Logistic Regression Pickle
-model1 = pickle.load(open("model/lreg_model.pkl", "rb"))
-# Scaler initialization
-scaler = StandardScaler()
-
-app = Flask(__name__, template_folder="templates")
-
+app=Flask(__name__)
+model= pickle.load(open("svm.pkl", "rb"))
 
 @app.route("/")
-def main():
-    return render_template('index.html')
+def home():
+   return render_template('main.html')
 
+@app.route("/predict", methods=["POST"])
+def predict():
+    float_features = [float(x) for x in request.form.values()]
+    feature = [np.array(float_features)]
+    prediction = model.predict(feature)
+    output_svm = round(prediction[0], 2)
+    output_text_svm = ''
+    if (output_svm == 0):
+        output_text_svm = 'No'
+    elif (output_svm == 1):
+        output_text_svm = 'Yes'
+    return render_template("main.html", prediction_text= "Will it rain tomorrow? {}".format(output_text_svm))
 
-@app.route('/predict_1', methods=['POST'])
-def predict_1():
-    '''
-    For rendering results on HTML GUI
-    '''
-    Location = int(request.form["Location"])
-    Rainfall = float(request.form["Rainfall"])
-    WindGustSpeed = float(request.form["WindGustSpeed"])
-    Humidity3pm = float(request.form["Humidity3pm"])
-    RainToday = float(request.form["RainToday"])
-
-    data_list = [[
-        Location,
-        Rainfall,
-        WindGustSpeed,
-        Humidity3pm,
-        RainToday
-    ]]
-    pred_scaller = scaler.fit_transform(data_list)
-    prediction = model1.predict(pred_scaller)
-
-    output = {
-        0: "Tidak Hujan",
-        1: "Hujan"
-    }
-
-    return render_template('index.html', prediction_text='Prediksi Cuaca Hari Besok adalah : {}'.format(output[prediction[0]]))
-
-
-if __name__ == '__main__':
+if __name__=="__main__":
     app.run(debug=True)
