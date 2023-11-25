@@ -1,0 +1,2 @@
+Link Github : https://github.com/AuditaBellaIntanPuspita/H8_05/blob/main/Final%20Project_2/PYTN_KampusMerdeka_fp2_Audita%20Bella%20Intan%20Puspita.ipynb
+Link Deploy : https://final2kelompok3svm.streamlit.app/
